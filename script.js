@@ -5,7 +5,6 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 // Состояние сцены
 const state = {
-    angle: 0,               // угол поворота камеры вокруг центра
     mouse_x: 0,             // текущая позиция мыши по X
     mouse_shift_x: 0,       // сдвиг по X при зажатой кнопке
     mouse_pressed: false,   // флаг: нажата ли кнопка мыши
@@ -122,8 +121,8 @@ function initContainer() {
     // Добавляем слушатель на движение мыши
     document.addEventListener( 'mousemove', (event) => {
         if (state.mouse_pressed) {
-            state.mouse_shift_x = state.mouse_x - event.clientX;
-            state.angle += state.mouse_shift_x * 0.1 * -1;
+            state.mouse_shift_x = event.clientX - state.mouse_x;
+            settings.camera.angle += state.mouse_shift_x * 0.1;
     
             state.mouse_x = event.clientX;
         }
@@ -269,10 +268,10 @@ async function initCube3DModel() {
 function processedState(scene, camera) {
 
     if (!state.mouse_pressed) {
-        state.angle += 0.4;
+        settings.camera.angle += 0.4;
     }
 
-    const rad = ((state.angle) / 360) * 2 * Math.PI;
+    const rad = ((settings.camera.angle) / 360) * 2 * Math.PI;
 
     camera.position.x = Math.cos( rad ) * state.multiple;
     camera.position.z = Math.sin( rad ) * state.multiple;
