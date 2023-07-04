@@ -28,6 +28,7 @@ const settings = {
         position_y: 1.5,    // позиция от центра мира вверх
         position_z: 1,      // позиция от центра мира назад
         angle: 0,           // угол поворота камеры
+        aspect: 1,          // соотношение сторон кадра
     },
 
     light: {
@@ -105,17 +106,18 @@ function generateColor() {
 /**
  * Инициализация DIV контейнера со сценой
  */
-function initContainer(camera) {
+function initContainer() {
 
-    const renderer = new THREE.WebGLRenderer( settings.render );
-
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-
-    // Добавляем DIV контейнер на страницу
+    // Находим нужный DIV контейнер на странице
     const sceneContainer = document.querySelector('#model3dcube');
-    document.body.appendChild( sceneContainer );
+
+    // Добавляем контейнер со сценой в DIV контейнер
+    const renderer = new THREE.WebGLRenderer( settings.render );
     sceneContainer.appendChild( renderer.domElement );
+
+    // Устанавливаем начальные параметры контейнера со сценой
+    renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
+    renderer.setPixelRatio( window.devicePixelRatio );
 
     // Добавляем слушатель на движение мыши
     document.addEventListener( 'mousemove', (event) => {
@@ -141,11 +143,11 @@ function initContainer(camera) {
 
     // Добавляем слушатель на изменение размеров окна
     window.addEventListener( 'resize', () => {
-        camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
-        camera.updateProjectionMatrix();
-
+        settings.camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
         renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
     });
+
+    settings.camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
 
     return renderer;
 
@@ -199,11 +201,9 @@ function initCubeObject() {
  */
 function initCamera() {
 
-    const aspectRatio = window.innerWidth / window.innerHeight;
-
     const camera = new THREE.PerspectiveCamera(
         settings.camera.fov,
-        aspectRatio,
+        settings.camera.aspect,
         settings.camera.distance_min,
         settings.camera.distance_max
     );
@@ -211,6 +211,12 @@ function initCamera() {
     camera.position.x = settings.camera.position_x;
     camera.position.y = settings.camera.position_y;
     camera.position.z = settings.camera.position_z * state.multiple;
+
+    // Добавляем слушатель на изменение размеров окна
+    window.addEventListener( 'resize', () => {
+        camera.aspect = settings.camera.aspect;
+        camera.updateProjectionMatrix();
+    });
 
     return camera;
 
@@ -311,15 +317,15 @@ function animate(scene, camera, renderer, cubeColored) {
  */
 async function run() {
 
+    // Инициализируем DIV контейнер для отрисовки
+    const renderer = initContainer();
+
     // Инициализируем сцену
     const scene = initScene();
 
     // Инициализируем камеру
     const camera = initCamera();
     scene.add( camera );
-
-    // Инициализируем DIV контейнер для отрисовки
-    const renderer = initContainer(camera);
 
     // Инициализируем центральный цветной куб
     const cubeColored = initCubeObject();
