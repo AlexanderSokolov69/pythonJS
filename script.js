@@ -8,7 +8,13 @@ const state = {
     mouse_x: 0,             // текущая позиция мыши по X
     mouse_shift_x: 0,       // сдвиг по X при зажатой кнопке
     mouse_pressed: false,   // флаг: нажата ли кнопка мыши
-    multiple: 6,            // ???
+
+    speed_max: 10,          // максимальная скорость вращения
+    speed_default: 0.4,     // стандартная скорость вращения (+ вправо; - влево)
+    speed_current: 0.4,     // текущая скорость вращения
+    speed_correction: 0.05, // значение изменения скорости к стандартной в кадр
+
+    multiple: 6,            // множитель сдвига камеры от центра
 };
 
 
@@ -267,8 +273,29 @@ async function initCube3DModel() {
  */
 function processedState(scene, camera) {
 
+    /** Рассчитать текущую скорость вращения */
+    const calcSpeed = () => {
+        const direction = Math.sign( state.speed_current ); 
+        let speed = Math.abs( state.speed_current );
+
+        // Ограничиваем максимальную скорость
+        if (speed > state.speed_max) speed = state.speed_max;
+
+        // Ограничиваем точность 2мя знаками после запятой
+        speed = Number((speed * direction).toFixed(2));
+
+        // Корректируем скорость к обычной при необходимости
+        if (speed > state.speed_default)      speed -= state.speed_correction;
+        else if (speed < state.speed_default) speed += state.speed_correction;
+
+        return speed;
+    }
+
     if (!state.mouse_pressed) {
-        settings.camera.angle += 0.4;
+        state.speed_current = calcSpeed();
+        settings.camera.angle += state.speed_current;
+    } else {
+        state.speed_current = state.mouse_shift_x;
     }
 
     const rad = ((settings.camera.angle) / 360) * 2 * Math.PI;
