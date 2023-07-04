@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/pytonJS.iml" filepath="$PROJECT_DIR$/.idea/pytonJS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../pythonJS/.idea/pythonJS.iml" filepath="$PROJECT_DIR$/../pythonJS/.idea/pythonJS.iml" />
     </modules>
   </component>
 </project>
