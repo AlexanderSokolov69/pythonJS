@@ -109,7 +109,7 @@ function generateColor() {
 function initContainer() {
 
     // Находим нужный DIV контейнер на странице
-    const sceneContainer = document.querySelector('#model3dcube');
+    const sceneContainer = document.querySelector( '#model3dcube' );
 
     // Добавляем контейнер со сценой в DIV контейнер
     const renderer = new THREE.WebGLRenderer( settings.render );
@@ -182,7 +182,7 @@ function initScene() {
 function initCubeObject() {
 
     const cubeSize = 2;
-    const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const cubeGeometry = new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize );
     const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
 
     const cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
@@ -301,10 +301,10 @@ function animate(scene, camera, renderer, cubeColored) {
     requestAnimationFrame( () => animate(...arguments) );
 
     // Обработка состояния сцены
-    processedState(scene, camera);
+    processedState( scene, camera );
 
     // Немного случайно изменяем цвет центрального куба
-    changeCubeColor(cubeColored)
+    changeCubeColor( cubeColored )
 
     // Рендер сцены
     renderer.render( scene, camera );
@@ -325,7 +325,6 @@ async function run() {
 
     // Инициализируем камеру
     const camera = initCamera();
-    scene.add( camera );
 
     // Инициализируем центральный цветной куб
     const cubeColored = initCubeObject();
@@ -334,14 +333,16 @@ async function run() {
     const cube3DModel = await initCube3DModel();
 
     // Добавляем на сцену объекты
+    scene.add( camera );
+
     scene.add( cubeColored.object );
-    cubeColored.object.rotation.set(45, 35.2644, 0); // Поворот на ось
+    cubeColored.object.rotation.set( 45, 35.2644, 0 ); // Поворот на ось
 
     scene.add( cube3DModel.object );
-    cube3DModel.object.rotation.set(45, 35.2644, 0); // Поворот на ось
+    cube3DModel.object.rotation.set( 45, 35.2644, 0 ); // Поворот на ось
 
     // Запускаем рендер
-    animate(scene, camera, renderer, cubeColored);
+    animate( scene, camera, renderer, cubeColored );
 
 }
 
