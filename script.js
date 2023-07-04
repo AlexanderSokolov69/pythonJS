@@ -113,7 +113,7 @@ function initContainer(camera) {
     renderer.setSize( window.innerWidth, window.innerHeight );
 
     // Добавляем DIV контейнер на страницу
-    const sceneContainer = document.createElement( 'div' );
+    const sceneContainer = document.querySelector('#model3dcube');
     document.body.appendChild( sceneContainer );
     sceneContainer.appendChild( renderer.domElement );
 
@@ -128,7 +128,7 @@ function initContainer(camera) {
     });
 
     // Добавляем слушатель на нажатие мыши
-    document.addEventListener( 'mousedown', (event) => {
+    sceneContainer.addEventListener( 'mousedown', (event) => {
         state.mouse_x = event.clientX;
         state.mouse_pressed = true;
     });
@@ -141,10 +141,10 @@ function initContainer(camera) {
 
     // Добавляем слушатель на изменение размеров окна
     window.addEventListener( 'resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
         camera.updateProjectionMatrix();
 
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
     });
 
     return renderer;
