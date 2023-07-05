@@ -109,6 +109,14 @@ function generateColor() {
 
 
 /**
+ * Перевод градусов в радианы
+ */
+function rad(degree) {
+    return ((degree) / 360) * 2 * Math.PI;
+}
+
+
+/**
  * Инициализация DIV контейнера со сценой
  */
 function initContainer() {
