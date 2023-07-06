@@ -10,11 +10,11 @@ const state = {
     mouse_pressed: false,   // флаг: нажата ли кнопка мыши
 
     speed_max: 10,          // максимальная скорость вращения
-    speed_default: 0.4,     // стандартная скорость вращения (+ вправо; - влево)
+    speed_default: -0.4,     // стандартная скорость вращения (+ вправо; - влево)
     speed_current: 0.4,     // текущая скорость вращения
     speed_correction: 0.05, // значение изменения скорости к стандартной в кадр
 
-    multiple: 4,            // множитель сдвига камеры от центра
+    multiple: 8,            // множитель сдвига камеры от центра
 };
 
 
@@ -26,9 +26,9 @@ const settings = {
     },
 
     camera: {
-        fov: 75,            // угол поля зрения
+        fov: 32,            // угол поля зрения
         distance_min: 1,    // мин дистанция рендера
-        distance_max: 10,   // макс дистанция рендера
+        distance_max: 12,   // макс дистанция рендера
         position_x: 0,      // позиция от центра мира вбок
         position_y: 1.5,    // позиция от центра мира вверх
         position_z: 1,      // позиция от центра мира назад
@@ -66,7 +66,7 @@ let colorTargetRGB  = [ 0, 200, 0 ];
  */
 function generateColor() {
 
-    // Величина сдвига значения за итерацию (скорость смены цвета) 
+    // Величина сдвига значения за итерацию (скорость смены цвета)
     const shiftSize = 1;
 
     // Отступы от границ диапазона снизу,
@@ -403,7 +403,7 @@ function processedState( cubeColored, cube3DModel, compModelArray) {
 
     /** Рассчитать текущую скорость вращения */
     const calcSpeed = () => {
-        const direction = Math.sign( state.speed_current ); 
+        const direction = Math.sign( state.speed_current );
         let speed = Math.abs( state.speed_current );
 
         // Ограничиваем максимальную скорость
