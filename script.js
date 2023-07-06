@@ -5,11 +5,16 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 // Состояние сцены
 const state = {
-    angle: 0,               // угол поворота камеры вокруг центра
     mouse_x: 0,             // текущая позиция мыши по X
     mouse_shift_x: 0,       // сдвиг по X при зажатой кнопке
     mouse_pressed: false,   // флаг: нажата ли кнопка мыши
-    multiple: 6,            // ???
+
+    speed_max: 10,          // максимальная скорость вращения
+    speed_default: 0.4,     // стандартная скорость вращения (+ вправо; - влево)
+    speed_current: 0.4,     // текущая скорость вращения
+    speed_correction: 0.05, // значение изменения скорости к стандартной в кадр
+
+    multiple: 4,            // множитель сдвига камеры от центра
 };
 
 
@@ -27,7 +32,7 @@ const settings = {
         position_x: 0,      // позиция от центра мира вбок
         position_y: 1.5,    // позиция от центра мира вверх
         position_z: 1,      // позиция от центра мира назад
-        angle: 0,           // угол поворота камеры
+        aspect: 1,          // соотношение сторон кадра
     },
 
     light: {
@@ -103,32 +108,39 @@ function generateColor() {
 
 
 /**
+ * Перевод градусов в радианы
+ */
+function rad(degree) {
+    return ((degree) / 360) * 2 * Math.PI;
+}
+
+
+/**
  * Инициализация DIV контейнера со сценой
  */
-function initContainer(camera) {
+function initContainer() {
 
+    // Находим нужный DIV контейнер на странице
+    const sceneContainer = document.querySelector( '#model3dcube' );
+
+    // Добавляем контейнер со сценой в DIV контейнер
     const renderer = new THREE.WebGLRenderer( settings.render );
-
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-
-    // Добавляем DIV контейнер на страницу
-    const sceneContainer = document.createElement( 'div' );
-    document.body.appendChild( sceneContainer );
     sceneContainer.appendChild( renderer.domElement );
+
+    // Устанавливаем начальные параметры контейнера со сценой
+    renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
+    renderer.setPixelRatio( window.devicePixelRatio );
 
     // Добавляем слушатель на движение мыши
     document.addEventListener( 'mousemove', (event) => {
         if (state.mouse_pressed) {
-            state.mouse_shift_x = state.mouse_x - event.clientX;
-            state.angle += state.mouse_shift_x * 0.1 * -1;
-    
+            state.mouse_shift_x = event.clientX - state.mouse_x;
             state.mouse_x = event.clientX;
         }
     });
 
     // Добавляем слушатель на нажатие мыши
-    document.addEventListener( 'mousedown', (event) => {
+    sceneContainer.addEventListener( 'mousedown', (event) => {
         state.mouse_x = event.clientX;
         state.mouse_pressed = true;
     });
@@ -141,11 +153,11 @@ function initContainer(camera) {
 
     // Добавляем слушатель на изменение размеров окна
     window.addEventListener( 'resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        settings.camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
+        renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
     });
+
+    settings.camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
 
     return renderer;
 
@@ -180,7 +192,7 @@ function initScene() {
 function initCubeObject() {
 
     const cubeSize = 2;
-    const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const cubeGeometry = new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize );
     const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
 
     const cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
@@ -199,11 +211,9 @@ function initCubeObject() {
  */
 function initCamera() {
 
-    const aspectRatio = window.innerWidth / window.innerHeight;
-
     const camera = new THREE.PerspectiveCamera(
         settings.camera.fov,
-        aspectRatio,
+        settings.camera.aspect,
         settings.camera.distance_min,
         settings.camera.distance_max
     );
@@ -211,6 +221,12 @@ function initCamera() {
     camera.position.x = settings.camera.position_x;
     camera.position.y = settings.camera.position_y;
     camera.position.z = settings.camera.position_z * state.multiple;
+
+    // Добавляем слушатель на изменение размеров окна
+    window.addEventListener( 'resize', () => {
+        camera.aspect = settings.camera.aspect;
+        camera.updateProjectionMatrix();
+    });
 
     return camera;
 
@@ -258,19 +274,169 @@ async function initCube3DModel() {
 
 
 /**
+ * Инициализация 3D модели компьютера
+ */
+async function initComp3DModel() {
+
+    let compModel = {
+        object: null,
+    };
+
+    return new Promise((resolve) => {
+
+        // Загружаем файлы 3D модели
+
+        const manager = new THREE.LoadingManager(() => resolve( compModel ));
+
+        function onProgress( xhr ) {
+            if ( xhr.lengthComputable ) {
+                const percentComplete = xhr.loaded / xhr.total * 100;
+                console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
+            }
+        }
+
+        function onError() {}
+
+        const loaderMtl = new MTLLoader( manager ); // Материал
+        const loaderObj = new OBJLoader( manager ); // Геометрия
+
+        loaderMtl.load('./data/comp-mesh.mtl', function ( material ) {
+                loaderObj.setMaterials( material );
+        }, onProgress);
+
+        loaderObj.load('./data/comp-mesh.obj', function ( object ) {
+            compModel.object = object;
+        }, onProgress);
+
+    });
+
+}
+
+
+/**
+ * Получить массив объектов компьютеров
+ */
+function generateCompModelArray(model) {
+
+    // компьютер 1 сверху
+    const comp3DObject1 = model.object.clone();
+    comp3DObject1.rotation.set( 0, rad(90), 0 );
+    comp3DObject1.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject1.position.set( 0, 1.8, 0 );
+
+    // компьютер 2 снизу
+    const comp3DObject2 = model.object.clone();
+    comp3DObject2.rotation.set( 0, rad(90), 0 );
+    comp3DObject2.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject2.position.set( 0, -2.15, 0 );
+
+    // компьютер 3 спереди
+    const comp3DObject3 = model.object.clone();
+    comp3DObject3.rotation.set( 0, rad(90), 0 );
+    comp3DObject3.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject3.position.set( 0, 0.4, 1.9 );
+
+    // компьютер 4 сзади
+    const comp3DObject4 = model.object.clone();
+    comp3DObject4.rotation.set( 0, rad(90), 0 );
+    comp3DObject4.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject4.position.set( 0, -0.7, -1.9 );
+
+    // компьютер 5 сзади справа
+    const comp3DObject5 = model.object.clone();
+    comp3DObject5.rotation.set( 0, rad(90), 0 );
+    comp3DObject5.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject5.position.set( 1.7, 0.4, -0.9 );
+
+    // компьютер 6 сзади слева
+    const comp3DObject6 = model.object.clone();
+    comp3DObject6.rotation.set( 0, rad(90), 0 );
+    comp3DObject6.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject6.position.set( -1.7, 0.4, -0.9 );
+
+    // компьютер 7 спереди справа
+    const comp3DObject7 = model.object.clone();
+    comp3DObject7.rotation.set( 0, rad(90), 0 );
+    comp3DObject7.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject7.position.set( 1.7, -0.7, 0.9 );
+
+    // компьютер 8 спереди слева
+    const comp3DObject8 = model.object.clone();
+    comp3DObject8.rotation.set( 0, rad(90), 0 );
+    comp3DObject8.scale.set( 0.15, 0.15, 0.15 );
+    comp3DObject8.position.set( -1.7, -0.7, 0.9 );
+
+    return [
+        comp3DObject1, comp3DObject2,
+        comp3DObject3, comp3DObject4,
+        comp3DObject5, comp3DObject6,
+        comp3DObject7, comp3DObject8,
+    ];
+
+}
+
+
+/**
+ * Перемещение объекта вокруг мировых осей
+ */
+function rotateAroundWorldAxis(object, axis, radians) {
+    var rotWorldMatrix = new THREE.Matrix4();
+    rotWorldMatrix.makeRotationAxis( axis.normalize(), radians );
+
+    var currentPos = new THREE.Vector4( object.position.x, object.position.y, object.position.z, 1 );
+    var newPos = currentPos.applyMatrix4( rotWorldMatrix );
+
+    // rotWorldMatrix.multiply( object.matrix );
+    // object.matrix = rotWorldMatrix;
+    // object.rotation.setFromRotationMatrix( object.matrix );
+
+    object.position.x = newPos.x;
+    object.position.y = newPos.y;
+    object.position.z = newPos.z;
+};
+
+
+/**
  * Обработка состояния сцены
  */
-function processedState(scene, camera) {
+function processedState( cubeColored, cube3DModel, compModelArray) {
 
-    if (!state.mouse_pressed) {
-        state.angle += 0.4;
+    /** Рассчитать текущую скорость вращения */
+    const calcSpeed = () => {
+        const direction = Math.sign( state.speed_current ); 
+        let speed = Math.abs( state.speed_current );
+
+        // Ограничиваем максимальную скорость
+        if (speed > state.speed_max) speed = state.speed_max;
+
+        // Ограничиваем точность 2мя знаками после запятой
+        speed = Number((speed * direction).toFixed(2));
+
+        // Корректируем скорость к обычной при необходимости
+        if (speed > state.speed_default)      speed -= state.speed_correction;
+        else if (speed < state.speed_default) speed += state.speed_correction;
+
+        return speed;
     }
 
-    const rad = ((state.angle) / 360) * 2 * Math.PI;
+    if (!state.mouse_pressed) {
+        state.speed_current = calcSpeed();
+    } else {
+        state.speed_current = state.mouse_shift_x;
+        state.mouse_shift_x = 0;
+    }
 
-    camera.position.x = Math.cos( rad ) * state.multiple;
-    camera.position.z = Math.sin( rad ) * state.multiple;
-    camera.lookAt( scene.position );
+    // Получаем угол на который необходимо повернуть объект в радианах
+    const rotationAngle = rad(state.speed_current);
+
+    // Поворачиваем кубы
+    cubeColored.object.rotateOnWorldAxis( new THREE.Vector3(0, 1, 0), rotationAngle )
+    cube3DModel.object.rotateOnWorldAxis( new THREE.Vector3(0, 1, 0), rotationAngle )
+
+    // Перемещаем компьютеры вокруг оси
+    for (const compModel of compModelArray) {
+        rotateAroundWorldAxis( compModel, new THREE.Vector3(0, 1, 0), rotationAngle )
+    }
 
 }
 
@@ -289,16 +455,16 @@ function changeCubeColor(cubeColored) {
 /**
  * Функция анимации - вызывается каждый кадр
  */
-function animate(scene, camera, renderer, cubeColored) {
+function animate(scene, camera, renderer, cubeColored, cube3DModel, compModelArray) {
 
     // Регистрация вызова функции на следующий кадр
     requestAnimationFrame( () => animate(...arguments) );
 
     // Обработка состояния сцены
-    processedState(scene, camera);
+    processedState( cubeColored, cube3DModel, compModelArray );
 
     // Немного случайно изменяем цвет центрального куба
-    changeCubeColor(cubeColored)
+    changeCubeColor( cubeColored )
 
     // Рендер сцены
     renderer.render( scene, camera );
@@ -311,15 +477,14 @@ function animate(scene, camera, renderer, cubeColored) {
  */
 async function run() {
 
+    // Инициализируем DIV контейнер для отрисовки
+    const renderer = initContainer();
+
     // Инициализируем сцену
     const scene = initScene();
 
     // Инициализируем камеру
     const camera = initCamera();
-    scene.add( camera );
-
-    // Инициализируем DIV контейнер для отрисовки
-    const renderer = initContainer(camera);
 
     // Инициализируем центральный цветной куб
     const cubeColored = initCubeObject();
@@ -327,15 +492,27 @@ async function run() {
     // Инициализируем 3D модель IT-CUBE
     const cube3DModel = await initCube3DModel();
 
+    // Инициализируем 3D модель компьютера
+    const comp3DModel = await initComp3DModel();
+
     // Добавляем на сцену объекты
+    scene.add( camera );
+    camera.lookAt( scene.position );
+
+    const rad_x = rad(-54.60);
+    const rad_y = rad(45);
+
     scene.add( cubeColored.object );
-    cubeColored.object.rotation.set(45, 35.2644, 0); // Поворот на ось
+    cubeColored.object.rotation.set( rad_x, rad_y, 0 ); // Поворот на ось
 
     scene.add( cube3DModel.object );
-    cube3DModel.object.rotation.set(45, 35.2644, 0); // Поворот на ось
+    cube3DModel.object.rotation.set( rad_x, rad_y, 0 ); // Поворот на ось
+
+    const compModelArray = generateCompModelArray( comp3DModel )
+    for (const compModel of compModelArray) scene.add( compModel );
 
     // Запускаем рендер
-    animate(scene, camera, renderer, cubeColored);
+    animate( scene, camera, renderer, cubeColored, cube3DModel, compModelArray );
 
 }
 
