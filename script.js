@@ -131,6 +131,8 @@ function initContainer() {
     renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
     renderer.setPixelRatio( window.devicePixelRatio );
 
+    // СОБЫТИЯ ДЛЯ ПК
+
     // Добавляем слушатель на движение мыши
     document.addEventListener( 'mousemove', (event) => {
         if (state.mouse_pressed) {
@@ -147,6 +149,30 @@ function initContainer() {
 
     // Добавляем слушатель на отпускание мыши
     document.addEventListener( 'mouseup', () => {
+        state.mouse_shift_x = 0;
+        state.mouse_pressed = false;
+    });
+
+    // СОБЫТИЯ ДЛЯ ТАЧ-УСТРОЙСТВ
+
+    // Добавляем слушатель на движение мыши
+    document.addEventListener( 'touchmove', (event) => {
+        if (state.mouse_pressed) {
+            const clientX = event.changedTouches[0]?.clientX || 0;
+            state.mouse_shift_x = clientX - state.mouse_x;
+            state.mouse_x = event.changedTouches[0].clientX;
+        }
+    });
+
+    // Добавляем слушатель на нажатие мыши
+    sceneContainer.addEventListener( 'touchstart', (event) => {
+        const clientX = event.changedTouches[0]?.clientX || 0;
+        state.mouse_x = clientX;
+        state.mouse_pressed = true;
+    });
+
+    // Добавляем слушатель на отпускание мыши
+    document.addEventListener( 'touchend', () => {
         state.mouse_shift_x = 0;
         state.mouse_pressed = false;
     });
