@@ -131,6 +131,8 @@ function initContainer() {
     renderer.setSize( sceneContainer.clientWidth, sceneContainer.clientHeight );
     renderer.setPixelRatio( window.devicePixelRatio );
 
+    // СОБЫТИЯ ДЛЯ ПК
+
     // Добавляем слушатель на движение мыши
     document.addEventListener( 'mousemove', (event) => {
         if (state.mouse_pressed) {
@@ -147,6 +149,30 @@ function initContainer() {
 
     // Добавляем слушатель на отпускание мыши
     document.addEventListener( 'mouseup', () => {
+        state.mouse_shift_x = 0;
+        state.mouse_pressed = false;
+    });
+
+    // СОБЫТИЯ ДЛЯ ТАЧ-УСТРОЙСТВ
+
+    // Добавляем слушатель на движение
+    document.addEventListener( 'touchmove', (event) => {
+        if (state.mouse_pressed) {
+            const clientX = event.changedTouches[0]?.clientX || 0;
+            state.mouse_shift_x = clientX - state.mouse_x;
+            state.mouse_x = event.changedTouches[0].clientX;
+        }
+    });
+
+    // Добавляем слушатель на нажатие
+    sceneContainer.addEventListener( 'touchstart', (event) => {
+        const clientX = event.changedTouches[0]?.clientX || 0;
+        state.mouse_x = clientX;
+        state.mouse_pressed = true;
+    });
+
+    // Добавляем слушатель на отпускание
+    document.addEventListener( 'touchend', () => {
         state.mouse_shift_x = 0;
         state.mouse_pressed = false;
     });
@@ -191,7 +217,7 @@ function initScene() {
  */
 function initCubeObject() {
 
-    const cubeSize = 2;
+    const cubeSize = 1.95;
     const cubeGeometry = new THREE.BoxGeometry( cubeSize, cubeSize, cubeSize );
     const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
 
@@ -322,49 +348,49 @@ function generateCompModelArray(model) {
     const comp3DObject1 = model.object.clone();
     comp3DObject1.rotation.set( 0, rad(90), 0 );
     comp3DObject1.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject1.position.set( 0, 1.8, 0 );
+    comp3DObject1.position.set( 0, 1.6, 0 );
 
     // компьютер 2 снизу
     const comp3DObject2 = model.object.clone();
     comp3DObject2.rotation.set( 0, rad(90), 0 );
     comp3DObject2.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject2.position.set( 0, -2.15, 0 );
+    comp3DObject2.position.set( 0, -2, 0 );
 
     // компьютер 3 спереди
     const comp3DObject3 = model.object.clone();
     comp3DObject3.rotation.set( 0, rad(90), 0 );
     comp3DObject3.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject3.position.set( 0, 0.4, 1.9 );
+    comp3DObject3.position.set( 0, 0.45, 1.72 );
 
     // компьютер 4 сзади
     const comp3DObject4 = model.object.clone();
     comp3DObject4.rotation.set( 0, rad(90), 0 );
     comp3DObject4.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject4.position.set( 0, -0.7, -1.9 );
+    comp3DObject4.position.set( 0, -0.7, -1.72 );
 
     // компьютер 5 сзади справа
     const comp3DObject5 = model.object.clone();
     comp3DObject5.rotation.set( 0, rad(90), 0 );
     comp3DObject5.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject5.position.set( 1.7, 0.4, -0.9 );
+    comp3DObject5.position.set( 1.45, 0.4, -0.9 );
 
     // компьютер 6 сзади слева
     const comp3DObject6 = model.object.clone();
     comp3DObject6.rotation.set( 0, rad(90), 0 );
     comp3DObject6.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject6.position.set( -1.7, 0.4, -0.9 );
+    comp3DObject6.position.set( -1.45, 0.4, -0.9 );
 
     // компьютер 7 спереди справа
     const comp3DObject7 = model.object.clone();
     comp3DObject7.rotation.set( 0, rad(90), 0 );
     comp3DObject7.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject7.position.set( 1.7, -0.7, 0.9 );
+    comp3DObject7.position.set( 1.45, -0.7, 0.9 );
 
     // компьютер 8 спереди слева
     const comp3DObject8 = model.object.clone();
     comp3DObject8.rotation.set( 0, rad(90), 0 );
     comp3DObject8.scale.set( 0.15, 0.15, 0.15 );
-    comp3DObject8.position.set( -1.7, -0.7, 0.9 );
+    comp3DObject8.position.set( -1.45, -0.7, 0.9 );
 
     return [
         comp3DObject1, comp3DObject2,
@@ -507,6 +533,7 @@ async function run() {
 
     scene.add( cube3DModel.object );
     cube3DModel.object.rotation.set( rad_x, rad_y, 0 ); // Поворот на ось
+    cube3DModel.object.scale.set( 0.93, 0.93, 0.93 );
 
     const compModelArray = generateCompModelArray( comp3DModel )
     for (const compModel of compModelArray) scene.add( compModel );
